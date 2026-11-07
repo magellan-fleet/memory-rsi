@@ -143,6 +143,17 @@ def _direction(plan):
     generation, outcome, withdrawn, exemptions = 0, plan["task"]["good"], set(), set()
     template = plan["template"]["content"]
     process = {r["id"] for key in ("achievements", "validation") for r in template[key] if r.get("scope") == "process"}
+    # Existing plans pin an older built-in coding template without scope tags.
+    # Recognize only exact historical built-in descriptions, never custom text.
+    legacy = {
+        "ast": "Use AST-aware exploration to map affected symbols before modifying.",
+        "lsp": "Use available LSP navigation/diagnostics; otherwise record a capability exception.",
+        "design": "Respect SRP and separation of concerns; avoid god files and god functions.",
+        "gitops": "Use GitOps: inspect diffs and state, preserve unrelated changes, and report delivery accurately.",
+    }
+    if plan["template"]["template_id"] == "coding":
+        process.update(r["id"] for r in template["achievements"]
+                       if "scope" not in r and legacy.get(r["id"]) == r["description"])
     task_ids = {r["id"] for key in ("achievements", "validation") for r in plan["task"].get(key, [])}
     for item in sequence(records, "steering"):
         shape(item, ("instruction", "actor", "at"), ("outcome", "withdraw_requirements", "process_exemptions"), label="steering")

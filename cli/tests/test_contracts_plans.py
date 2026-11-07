@@ -454,3 +454,12 @@ def test_advisory_review_does_not_block_but_specific_blocking_finding_does(api):
     assert plan["validation"]["work_items"][0]["blocking_findings"] == ["result"]
     with pytest.raises(ContractError, match="cannot complete"):
         update(api, plan, status="complete")
+
+
+def test_historical_coding_process_is_optional_without_weakening_custom_requirements():
+    from agent_memory.plans import _direction
+    template = {"achievements": [
+        {"id": "ast", "description": "Use AST-aware exploration to map affected symbols before modifying.", "evidence": "inspect"},
+        {"id": "lsp", "description": "Customer-specific requirement", "evidence": "inspect"}], "validation": []}
+    direction = _direction({"task": {"good": "Ship"}, "template": {"template_id": "coding", "content": template}})
+    assert direction["process_requirements"] == ["ast"]
