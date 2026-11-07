@@ -372,7 +372,10 @@ class PolicyStore:
             repo = _git_prepare(self.root, no_git, allow_non_main_branch, owned)
             paths = [self._save_snapshot(current["body"], "external" if current["exists"] else "default", "Observed canonical content before explicit policy change; external author not authenticated"), self._save_snapshot(body, actor, reason)]
             # Both rollback endpoints are durable before the canonical swap.
-            latest = self._current()
+            # On first creation, this transaction itself just wrote the initial
+            # history snapshots.  A still-absent canonical file is therefore
+            # the same initial state, not a deleted historical policy.
+            latest = current if not current["exists"] and not self.path().exists() else self._current()
             if latest["revision"] != current["revision"] or latest["exists"] != current["exists"]:
                 raise PolicyError("Policy changed during update", "revision_conflict")
             _atomic_write(self.path(), body)
